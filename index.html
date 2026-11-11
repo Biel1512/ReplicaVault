@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vaultwarden - Gerenciador de Senhas</title>
+  
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Google Font Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Toast container -->
+    <div id="toast-container"></div>
+
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen" class="screen active">
+      <div class="auth-container">
+        <div class="auth-logo">
+          <i class="fas fa-shield-halved"></i>
+          <h1>Vaultwarden</h1>
+          <p>Gerenciador de Senhas Seguro</p>
+        </div>
+
+        <!-- Login Form -->
+        <div id="login-view" class="auth-view active">
+          <h2>Entrar</h2>
+          <form id="login-form">
+            <div class="form-group">
+              <label for="login-email">Email</label>
+              <input type="email" id="login-email" required autocomplete="email" placeholder="seu@email.com">
+            </div>
+            <div class="form-group">
+              <label for="login-password">Senha Mestra</label>
+              <div class="password-input-wrapper">
+                <input type="password" id="login-password" required placeholder="Digite sua senha mestra">
+                <button type="button" class="toggle-password" data-target="login-password" title="Alternar visibilidade da senha"><i class="fas fa-eye"></i></button>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+            <p class="auth-switch">Não tem uma conta? <a href="#" id="show-register">Criar conta</a></p>
+          </form>
+        </div>
+
+        <!-- Register Form -->
+        <div id="register-view" class="auth-view">
+          <h2>Criar Conta</h2>
+          <form id="register-form">
+            <div class="form-group">
+              <label for="register-email">Email</label>
+              <input type="email" id="register-email" required placeholder="seu@email.com">
+            </div>
+            <div class="form-group">
+              <label for="register-password">Senha Mestra</label>
+              <div class="password-input-wrapper">
+                <input type="password" id="register-password" required minlength="8" placeholder="Mínimo de 8 caracteres">
+                <button type="button" class="toggle-password" data-target="register-password" title="Alternar visibilidade da senha"><i class="fas fa-eye"></i></button>
+              </div>
+              <div id="register-strength" class="strength-bar"><div class="strength-fill"></div></div>
+              <small class="strength-label"></small>
+            </div>
+            <div class="form-group">
+              <label for="register-confirm">Confirmar Senha Mestra</label>
+              <div class="password-input-wrapper">
+                <input type="password" id="register-confirm" required minlength="8" placeholder="Repita sua senha mestra">
+                <button type="button" class="toggle-password" data-target="register-confirm" title="Alternar visibilidade da senha"><i class="fas fa-eye"></i></button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="register-hint">Dica de Senha (opcional)</label>
+              <input type="text" id="register-hint" placeholder="Uma dica para lembrar sua senha">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Criar Conta</button>
+            <p class="auth-switch">Já tem uma conta? <a href="#" id="show-login">Entrar</a></p>
+          </form>
+        </div>
+
+        <!-- Lock Screen -->
+        <div id="lock-view" class="auth-view">
+          <h2><i class="fas fa-lock"></i> Cofre Bloqueado</h2>
+          <p id="lock-email" class="lock-email"></p>
+          <form id="lock-form">
+            <div class="form-group">
+              <label for="lock-password">Senha Mestra</label>
+              <div class="password-input-wrapper">
+                <input type="password" id="lock-password" required placeholder="Digite sua senha mestra">
+                <button type="button" class="toggle-password" data-target="lock-password" title="Alternar visibilidade da senha"><i class="fas fa-eye"></i></button>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Desbloquear</button>
+            <p class="auth-switch"><a href="#" id="lock-logout">Sair da conta</a></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN SCREEN -->
+    <div id="main-screen" class="screen">
+      <!-- Top Bar -->
+      <header id="top-bar">
+        <div class="top-bar-left">
+          <div class="logo-small"><i class="fas fa-shield-halved"></i> <span>Vaultwarden</span></div>
+        </div>
+        <div class="top-bar-center">
+          <div class="search-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-input" placeholder="Buscar no cofre...">
+          </div>
+        </div>
+        <div class="top-bar-right">
+          <button id="btn-generator" class="top-btn" title="Gerador de Senhas"><i class="fas fa-key"></i></button>
+          <button id="btn-health" class="top-btn" title="Saúde do Cofre"><i class="fas fa-heart-pulse"></i></button>
+          <button id="btn-tools" class="top-btn" title="Ferramentas"><i class="fas fa-wrench"></i></button>
+          <button id="btn-lock" class="top-btn" title="Bloquear"><i class="fas fa-lock"></i></button>
+          <button id="btn-logout" class="top-btn" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <div id="content">
+        <!-- Sidebar -->
+        <nav id="sidebar">
+          <div class="sidebar-section">
+            <a href="#" class="sidebar-item active" data-filter="all"><i class="fas fa-vault"></i> <span>Todos os Itens</span> <span class="badge" id="badge-all"></span></a>
+            <a href="#" class="sidebar-item" data-filter="favorites"><i class="fas fa-star"></i> <span>Favoritos</span> <span class="badge" id="badge-fav"></span></a>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-header">Tipos</div>
+            <a href="#" class="sidebar-item" data-filter="type" data-type="login"><i class="fas fa-globe"></i> <span>Logins</span> <span class="badge" id="badge-login"></span></a>
+            <a href="#" class="sidebar-item" data-filter="type" data-type="card"><i class="fas fa-credit-card"></i> <span>Cartões</span> <span class="badge" id="badge-card"></span></a>
+            <a href="#" class="sidebar-item" data-filter="type" data-type="identity"><i class="fas fa-id-card"></i> <span>Identidades</span> <span class="badge" id="badge-identity"></span></a>
+            <a href="#" class="sidebar-item" data-filter="type" data-type="note"><i class="fas fa-sticky-note"></i> <span>Notas Seguras</span> <span class="badge" id="badge-note"></span></a>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-header">Pastas <button id="btn-add-folder" class="sidebar-action" title="Nova Pasta"><i class="fas fa-plus"></i></button></div>
+            <div id="folders-list"></div>
+          </div>
+          <div class="sidebar-section">
+            <a href="#" class="sidebar-item" data-filter="trash"><i class="fas fa-trash"></i> <span>Lixeira</span> <span class="badge" id="badge-trash"></span></a>
+          </div>
+        </nav>
+
+        <!-- Vault List -->
+        <div id="vault-list">
+          <div class="vault-list-header">
+            <h2 id="vault-list-title">Todos os Itens</h2>
+            <button id="btn-add-item" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Novo Item</button>
+          </div>
+          <div id="vault-items"></div>
+          <div id="vault-empty" class="empty-state">
+            <i class="fas fa-vault"></i>
+            <p>Nenhum item encontrado</p>
+          </div>
+        </div>
+
+        <!-- Item Detail Panel -->
+        <div id="item-detail" class="detail-panel">
+          <div id="detail-empty" class="empty-state active">
+            <i class="fas fa-hand-pointer"></i>
+            <p>Selecione um item para ver os detalhes</p>
+          </div>
+          <div id="detail-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODALS -->
+
+    <!-- Add/Edit Item Modal -->
+    <div id="item-modal" class="modal">
+      <div class="modal-overlay"></div>
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <h3 id="item-modal-title">Novo Item</h3>
+          <button class="modal-close" title="Fechar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <form id="item-form">
+            <input type="hidden" id="item-id">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="item-type">Tipo</label>
+                <select id="item-type" class="form-select">
+                  <option value="login">Login</option>
+                  <option value="note">Nota Segura</option>
+                  <option value="card">Cartão</option>
+                  <option value="identity">Identidade</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="item-name">Nome</label>
+                <input type="text" id="item-name" required placeholder="Ex: Google, Cartão Nubank...">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="item-folder">Pasta</label>
+              <select id="item-folder" class="form-select">
+                <option value="">Nenhuma pasta</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label"><input type="checkbox" id="item-favorite"> <span>Favorito</span></label>
+            </div>
+
+            <!-- Login fields -->
+            <div id="fields-login" class="type-fields">
+              <div class="form-group">
+                <label for="field-username">Usuário</label>
+                <input type="text" id="field-username" autocomplete="off" placeholder="usuario@exemplo.com">
+              </div>
+              <div class="form-group">
+                <label for="field-password">Senha</label>
+                <div class="password-input-wrapper">
+                  <input type="password" id="field-password" autocomplete="off" placeholder="Senha do login">
+                  <button type="button" class="toggle-password" data-target="field-password" title="Alternar visibilidade"><i class="fas fa-eye"></i></button>
+                  <button type="button" id="btn-generate-password" class="input-action" title="Gerar Senha"><i class="fas fa-refresh"></i></button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="field-uri">URI / Website</label>
+                <input type="url" id="field-uri" placeholder="https://exemplo.com">
+              </div>
+              <div class="form-group">
+                <label for="field-login-notes">Notas</label>
+                <textarea id="field-login-notes" rows="3" placeholder="Anotações adicionais..."></textarea>
+              </div>
+            </div>
+
+            <!-- Note fields -->
+            <div id="fields-note" class="type-fields" style="display:none">
+              <div class="form-group">
+                <label for="field-note-content">Conteúdo</label>
+                <textarea id="field-note-content" rows="8" placeholder="Digite sua nota segura..."></textarea>
+              </div>
+            </div>
+
+            <!-- Card fields -->
+            <div id="fields-card" class="type-fields" style="display:none">
+              <div class="form-group">
+                <label for="field-cardholder">Nome do Titular</label>
+                <input type="text" id="field-cardholder" placeholder="NOME COMO NO CARTÃO">
+              </div>
+              <div class="form-group">
+                <label for="field-card-number">Número do Cartão</label>
+                <input type="text" id="field-card-number" maxlength="19" placeholder="0000 0000 0000 0000">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="field-exp-month">Mês de Validade</label>
+                  <select id="field-exp-month" class="form-select">
+                    <option value="">--</option>
+                    <option value="01">01 - Janeiro</option>
+                    <option value="02">02 - Fevereiro</option>
+                    <option value="03">03 - Março</option>
+                    <option value="04">04 - Abril</option>
+                    <option value="05">05 - Maio</option>
+                    <option value="06">06 - Junho</option>
+                    <option value="07">07 - Julho</option>
+                    <option value="08">08 - Agosto</option>
+                    <option value="09">09 - Setembro</option>
+                    <option value="10">10 - Outubro</option>
+                    <option value="11">11 - Novembro</option>
+                    <option value="12">12 - Dezembro</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="field-exp-year">Ano</label>
+                  <input type="text" id="field-exp-year" maxlength="4" placeholder="AAAA">
+                </div>
+                <div class="form-group">
+                  <label for="field-cvv">CVV</label>
+                  <div class="password-input-wrapper">
+                    <input type="password" id="field-cvv" maxlength="4" placeholder="123">
+                    <button type="button" class="toggle-password" data-target="field-cvv" title="Alternar visibilidade"><i class="fas fa-eye"></i></button>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="field-card-notes">Notas</label>
+                <textarea id="field-card-notes" rows="3" placeholder="Anotações sobre o cartão..."></textarea>
+              </div>
+            </div>
+
+            <!-- Identity fields -->
+            <div id="fields-identity" class="type-fields" style="display:none">
+              <div class="form-row">
+                <div class="form-group"><label for="field-first-name">Nome</label><input type="text" id="field-first-name" placeholder="Primeiro nome"></div>
+                <div class="form-group"><label for="field-last-name">Sobrenome</label><input type="text" id="field-last-name" placeholder="Sobrenome"></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label for="field-id-email">Email</label><input type="email" id="field-id-email" placeholder="identidade@exemplo.com"></div>
+                <div class="form-group"><label for="field-phone">Telefone</label><input type="tel" id="field-phone" placeholder="(11) 99999-9999"></div>
+              </div>
+              <div class="form-group"><label for="field-address1">Endereço Linha 1</label><input type="text" id="field-address1" placeholder="Rua, Av, Número, Complemento"></div>
+              <div class="form-group"><label for="field-address2">Endereço Linha 2</label><input type="text" id="field-address2" placeholder="Bairro, Bloco, Apto"></div>
+              <div class="form-row">
+                <div class="form-group"><label for="field-city">Cidade</label><input type="text" id="field-city" placeholder="Cidade"></div>
+                <div class="form-group"><label for="field-state">Estado</label><input type="text" id="field-state" placeholder="UF"></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label for="field-zip">CEP</label><input type="text" id="field-zip" placeholder="00000-000"></div>
+                <div class="form-group"><label for="field-country">País</label><input type="text" id="field-country" placeholder="Brasil"></div>
+              </div>
+              <div class="form-group"><label for="field-id-notes">Notas</label><textarea id="field-id-notes" rows="3" placeholder="Anotações da identidade..."></textarea></div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel">Cancelar</button>
+          <button type="button" id="btn-save-item" class="btn btn-primary">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Password Generator Modal -->
+    <div id="generator-modal" class="modal">
+      <div class="modal-overlay"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Gerador de Senhas</h3>
+          <button class="modal-close" title="Fechar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="generated-password-display">
+            <code id="generated-password"></code>
+            <button type="button" id="btn-copy-generated" class="btn-icon" title="Copiar"><i class="fas fa-copy"></i></button>
+            <button type="button" id="btn-regenerate" class="btn-icon" title="Gerar Nova"><i class="fas fa-refresh"></i></button>
+          </div>
+          <div id="gen-strength" class="strength-bar"><div class="strength-fill"></div></div>
+          <small id="gen-strength-label" class="strength-label"></small>
+
+          <div class="gen-tabs">
+            <button class="gen-tab active" data-tab="password">Senha</button>
+            <button class="gen-tab" data-tab="passphrase">Passphrase</button>
+          </div>
+
+          <div id="gen-password-options" class="gen-options">
+            <div class="form-group">
+              <label for="gen-length">Comprimento: <span id="gen-length-val">16</span></label>
+              <input type="range" id="gen-length" min="8" max="128" value="16">
+            </div>
+            <label class="checkbox-label"><input type="checkbox" id="gen-uppercase" checked> <span>Maiúsculas (A-Z)</span></label>
+            <label class="checkbox-label"><input type="checkbox" id="gen-lowercase" checked> <span>Minúsculas (a-z)</span></label>
+            <label class="checkbox-label"><input type="checkbox" id="gen-numbers" checked> <span>Números (0-9)</span></label>
+            <label class="checkbox-label"><input type="checkbox" id="gen-symbols" checked> <span>Símbolos (!@#$%...)</span></label>
+            <div class="form-row">
+              <div class="form-group"><label for="gen-min-numbers">Mín. Números</label><input type="number" id="gen-min-numbers" value="1" min="0" max="9"></div>
+              <div class="form-group"><label for="gen-min-symbols">Mín. Símbolos</label><input type="number" id="gen-min-symbols" value="1" min="0" max="9"></div>
+            </div>
+          </div>
+
+          <div id="gen-passphrase-options" class="gen-options" style="display:none">
+            <div class="form-group">
+              <label for="gen-words">Número de Palavras: <span id="gen-words-val">4</span></label>
+              <input type="range" id="gen-words" min="3" max="10" value="4">
+            </div>
+            <div class="form-group">
+              <label for="gen-separator">Separador</label>
+              <input type="text" id="gen-separator" value="-" maxlength="3">
+            </div>
+            <label class="checkbox-label"><input type="checkbox" id="gen-capitalize" checked> <span>Capitalizar</span></label>
+            <label class="checkbox-label"><input type="checkbox" id="gen-include-number" checked> <span>Incluir Número</span></label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel">Fechar</button>
+          <button type="button" id="btn-use-password" class="btn btn-primary">Usar Senha</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Folder Modal -->
+    <div id="folder-modal" class="modal">
+      <div class="modal-overlay"></div>
+      <div class="modal-content modal-small">
+        <div class="modal-header">
+          <h3 id="folder-modal-title">Nova Pasta</h3>
+          <button class="modal-close" title="Fechar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="folder-name">Nome da Pasta</label>
+            <input type="text" id="folder-name" required placeholder="Nome da pasta">
+            <input type="hidden" id="folder-id">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel">Cancelar</button>
+          <button type="button" id="btn-save-folder" class="btn btn-primary">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tools Modal (Import/Export) -->
+    <div id="tools-modal" class="modal">
+      <div class="modal-overlay"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Ferramentas</h3>
+          <button class="modal-close" title="Fechar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="tools-section">
+            <h4><i class="fas fa-file-export"></i> Exportar Cofre</h4>
+            <p>Exporte seus dados para um arquivo JSON.</p>
+            <div class="form-group">
+              <label class="checkbox-label"><input type="checkbox" id="export-encrypted"> <span>Exportar criptografado</span></label>
+            </div>
+            <button type="button" id="btn-export" class="btn btn-primary"><i class="fas fa-download"></i> Exportar</button>
+          </div>
+          <hr>
+          <div class="tools-section">
+            <h4><i class="fas fa-file-import"></i> Importar Dados</h4>
+            <p>Importe dados de um arquivo JSON exportado anteriormente.</p>
+            <div class="form-group">
+              <input type="file" id="import-file" accept=".json">
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label"><input type="checkbox" id="import-replace"> <span>Substituir dados existentes</span></label>
+            </div>
+            <button type="button" id="btn-import" class="btn btn-primary"><i class="fas fa-upload"></i> Importar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Health Report Modal -->
+    <div id="health-modal" class="modal">
+      <div class="modal-overlay"></div>
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <h3><i class="fas fa-heart-pulse"></i> Saúde do Cofre</h3>
+          <button class="modal-close" title="Fechar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div id="health-report"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal" class="modal">
+      <div class="modal-overlay"></div>
+      <div class="modal-content modal-small">
+        <div class="modal-header">
+          <h3 id="confirm-title">Confirmar</h3>
+          <button class="modal-close" title="Fechar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <p id="confirm-message"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel">Cancelar</button>
+          <button type="button" id="btn-confirm-ok" class="btn btn-danger">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/crypto.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/generator.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/vault.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
